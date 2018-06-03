@@ -52,6 +52,7 @@ angular.module('todomvc')
 			$scope.editedTodo = todo;
 			// Clone the original todo to restore it on demand.
 			$scope.originalTodo = angular.extend({}, todo);
+
 		};
 
 		$scope.saveEdits = function (todo, event) {
