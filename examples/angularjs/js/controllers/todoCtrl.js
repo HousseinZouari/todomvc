@@ -13,6 +13,7 @@ angular.module('todomvc')
 
 		$scope.newTodo = '';
 		$scope.editedTodo = null;
+		$scope.nextTodo = false;
 
 		$scope.$watch('todos', function () {
 			$scope.remainingCount = $filter('filter')(todos, { completed: false }).length;
@@ -55,6 +56,13 @@ angular.module('todomvc')
 
 		};
 
+		/**
+		 * function executed when click on  tab-key
+		 */
+		$scope.moveToNext = function() {
+			$scope.nextTodo = true;
+		};
+
 		$scope.saveEdits = function (todo, event) {
 			// Blur events are automatically triggered after the form submit event.
 			// This does some unfortunate logic handling to prevent saving twice.
@@ -74,7 +82,11 @@ angular.module('todomvc')
 			todo.title = todo.title.trim();
 
 			if (todo.title === $scope.originalTodo.title) {
-				$scope.editedTodo = null;
+				if(!$scope.nextTodo) {
+					$scope.editedTodo = null;
+				} else {
+					getNextTodo(todo);
+				}
 				return;
 			}
 
@@ -84,6 +96,9 @@ angular.module('todomvc')
 				})
 				.finally(function () {
 					$scope.editedTodo = null;
+					if ($scope.nextTodo) {
+						getNextTodo(todo);
+					}
 				});
 		};
 
@@ -123,4 +138,20 @@ angular.module('todomvc')
 				}
 			});
 		};
+
+
+		/**
+		 * function to Next todo focus
+		 */
+		function getNextTodo(todo) {
+
+			var index = $scope.todos.indexOf(todo);
+			$scope.nextTodo = false;
+
+			if (index < $scope.todos.length - 1) {
+				$scope.editedTodo = $scope.todos[index + 1];
+			} else {
+				$scope.editedTodo = $scope.todos[0];
+			}
+		}
 	});
