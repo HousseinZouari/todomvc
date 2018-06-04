@@ -15,6 +15,14 @@ angular.module('todomvc')
 		$scope.editedTodo = null;
 		$scope.nextTodo = false;
 
+		var indexTodosActions = 0;
+		var todosActions = [];
+
+		var ACTIONS = {
+			UNDO_CMD: 'undoCmd'
+		};
+		todosActions.push(angular.copy($scope.todos));
+
 		$scope.$watch('todos', function () {
 			$scope.remainingCount = $filter('filter')(todos, { completed: false }).length;
 			$scope.completedCount = todos.length - $scope.remainingCount;
@@ -43,6 +51,7 @@ angular.module('todomvc')
 			store.insert(newTodo)
 				.then(function success() {
 					$scope.newTodo = '';
+					addTodoActions();
 				})
 				.finally(function () {
 					$scope.saving = false;
@@ -99,8 +108,15 @@ angular.module('todomvc')
 					if ($scope.nextTodo) {
 						getNextTodo(todo);
 					}
+					addTodoActions();
 				});
 		};
+
+		$scope.$on(ACTIONS.UNDO_CMD, function() {
+			if (indexTodosActions >= 1) {
+				getTodosFromUndoRedo(ACTIONS.UNDO_CMD);
+			}
+		});
 
 		$scope.revertEdits = function (todo) {
 			todos[todos.indexOf(todo)] = $scope.originalTodo;
@@ -111,6 +127,7 @@ angular.module('todomvc')
 
 		$scope.removeTodo = function (todo) {
 			store.delete(todo);
+			addTodoActions();
 		};
 
 		$scope.saveTodo = function (todo) {
@@ -125,20 +142,47 @@ angular.module('todomvc')
 				.then(function success() {}, function error() {
 					todo.completed = !todo.completed;
 				});
+
+			if(completed === undefined) {
+				addTodoActions();
+			}
 		};
 
 		$scope.clearCompletedTodos = function () {
 			store.clearCompleted();
+			addTodoActions();
 		};
 
 		$scope.markAll = function (completed) {
-			todos.forEach(function (todo) {
+			$scope.todos.forEach(function (todo) {
 				if (todo.completed !== completed) {
 					$scope.toggleCompleted(todo, completed);
 				}
 			});
+			addTodoActions();
 		};
 
+		/**
+		 * function to Save the action (eg. check off, edit, adding a to-do and deleting a to-do)
+		 */
+		function addTodoActions() {
+			indexTodosActions += 1;
+			todosActions.splice(indexTodosActions, 0, angular.copy($scope.todos));
+
+		}
+
+		/**
+		 * function to discard the changes
+		 */
+		function getTodosFromUndoRedo(type) {
+			if (type == ACTIONS.UNDO_CMD) {
+				indexTodosActions -= 1;
+			}
+			$scope.$apply(function() {
+				$scope.todos = angular.copy(todosActions[indexTodosActions]);
+				store.todos = $scope.todos;
+			});
+		}
 
 		/**
 		 * function to Next todo focus
