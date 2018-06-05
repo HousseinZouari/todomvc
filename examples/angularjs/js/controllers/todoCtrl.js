@@ -19,7 +19,8 @@ angular.module('todomvc')
 		var todosActions = [];
 
 		var ACTIONS = {
-			UNDO_CMD: 'undoCmd'
+			UNDO_CMD: 'undoCmd',
+			REDO_CMD: 'redoCmd'
 		};
 		todosActions.push(angular.copy($scope.todos));
 
@@ -118,6 +119,12 @@ angular.module('todomvc')
 			}
 		});
 
+		$scope.$on(ACTIONS.REDO_CMD, function() {
+			if (indexTodosActions < todosActions.length - 1) {
+				getTodosFromUndoRedo(ACTIONS.REDO_CMD);
+			}
+		});
+
 		$scope.revertEdits = function (todo) {
 			todos[todos.indexOf(todo)] = $scope.originalTodo;
 			$scope.editedTodo = null;
@@ -177,10 +184,15 @@ angular.module('todomvc')
 		function getTodosFromUndoRedo(type) {
 			if (type == ACTIONS.UNDO_CMD) {
 				indexTodosActions -= 1;
+			} else {
+				indexTodosActions += 1;
 			}
 			$scope.$apply(function() {
 				$scope.todos = angular.copy(todosActions[indexTodosActions]);
 				store.todos = $scope.todos;
+				if (type == ACTIONS.REDO_CMD) {
+					store._saveToLocalStorage(angular.copy(todosActions[indexTodosActions]));
+				}
 			});
 		}
 
